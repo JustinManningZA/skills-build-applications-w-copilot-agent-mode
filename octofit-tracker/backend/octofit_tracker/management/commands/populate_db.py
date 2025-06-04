@@ -1,34 +1,57 @@
+
+# This script uses PyMongo to insert test data directly into MongoDB.
 from django.core.management.base import BaseCommand
-from octofit_tracker.models import User, Team, Activity, Leaderboard, Workout
-from django.utils import timezone
+from pymongo import MongoClient
+from datetime import datetime
 
 class Command(BaseCommand):
-    help = 'Populate the octofit_db database with test data.'
+    help = 'Populate the octofit_db database with test data using PyMongo.'
 
     def handle(self, *args, **kwargs):
+        client = MongoClient('localhost', 27017)
+        db = client['octofit_db']
+
         # Users
-        user1 = User.objects.create(email='alice@example.com', name='Alice', password='alicepass')
-        user2 = User.objects.create(email='bob@example.com', name='Bob', password='bobpass')
-        user3 = User.objects.create(email='carol@example.com', name='Carol', password='carolpass')
+        users = [
+            { 'email': 'alice@example.com', 'name': 'Alice', 'password': 'alicepass' },
+            { 'email': 'bob@example.com', 'name': 'Bob', 'password': 'bobpass' },
+            { 'email': 'carol@example.com', 'name': 'Carol', 'password': 'carolpass' }
+        ]
+        db.users.delete_many({})
+        db.users.insert_many(users)
 
         # Teams
-        team1 = Team.objects.create(name='Team Alpha')
-        team2 = Team.objects.create(name='Team Beta')
-        team1.members.set([user1, user2])
-        team2.members.set([user3])
+        teams = [
+            { 'name': 'Team Alpha', 'members': ['alice@example.com', 'bob@example.com'] },
+            { 'name': 'Team Beta', 'members': ['carol@example.com'] }
+        ]
+        db.teams.delete_many({})
+        db.teams.insert_many(teams)
 
         # Activities
-        Activity.objects.create(user=user1, activity_type='run', duration=30, date=timezone.now())
-        Activity.objects.create(user=user2, activity_type='walk', duration=45, date=timezone.now())
-        Activity.objects.create(user=user3, activity_type='strength', duration=60, date=timezone.now())
+        activities = [
+            { 'user': 'alice@example.com', 'activity_type': 'run', 'duration': 30, 'date': datetime.utcnow() },
+            { 'user': 'bob@example.com', 'activity_type': 'walk', 'duration': 45, 'date': datetime.utcnow() },
+            { 'user': 'carol@example.com', 'activity_type': 'strength', 'duration': 60, 'date': datetime.utcnow() }
+        ]
+        db.activity.delete_many({})
+        db.activity.insert_many(activities)
 
         # Leaderboard
-        Leaderboard.objects.create(team=team1, points=150)
-        Leaderboard.objects.create(team=team2, points=100)
+        leaderboard = [
+            { 'team': 'Team Alpha', 'points': 150 },
+            { 'team': 'Team Beta', 'points': 100 }
+        ]
+        db.leaderboard.delete_many({})
+        db.leaderboard.insert_many(leaderboard)
 
         # Workouts
-        Workout.objects.create(user=user1, workout_type='cardio', details='30 min run', date=timezone.now())
-        Workout.objects.create(user=user2, workout_type='walk', details='45 min walk', date=timezone.now())
-        Workout.objects.create(user=user3, workout_type='strength', details='60 min strength', date=timezone.now())
+        workouts = [
+            { 'user': 'alice@example.com', 'workout_type': 'cardio', 'details': '30 min run', 'date': datetime.utcnow() },
+            { 'user': 'bob@example.com', 'workout_type': 'walk', 'details': '45 min walk', 'date': datetime.utcnow() },
+            { 'user': 'carol@example.com', 'workout_type': 'strength', 'details': '60 min strength', 'date': datetime.utcnow() }
+        ]
+        db.workouts.delete_many({})
+        db.workouts.insert_many(workouts)
 
-        self.stdout.write(self.style.SUCCESS('Test data populated successfully.'))
+        self.stdout.write(self.style.SUCCESS('Test data populated successfully using PyMongo.'))
